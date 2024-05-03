@@ -1,0 +1,35 @@
+name: 백엔드 배포
+
+on: workflow_dispatch
+
+jobs:
+  build-docker-image:
+    name: 도커 이미지 빌드 및 푸시
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Git 브랜치 체크아웃
+        uses: actions/checkout@v2
+
+      - name: Docker 로그인
+        run: echo ${{ secrets.DOCKER_ACCESS_TOKEN }} | docker login -u ${{ secrets.DOCKER_USERNAME }} --password-stdin
+
+      - name: Node.js 구성
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      - name: Node.js 의존성 설치
+        working-directory: ./backend
+        run: npm ci
+
+      - name: Node.js 앱 빌드
+        working-directory: ./backend
+        run: npm run build
+
+      - name: Docker 이미지 빌드
+        working-directory: ./backend
+        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/web-note-editor:latest .
+
+      - name: Docker 이미지 푸시
+        run: docker push ${{ secrets.DOCKER_USERNAME }}/web-note-editor:latest
